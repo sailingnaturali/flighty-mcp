@@ -10,7 +10,7 @@ def test_stats_counts_owner_flights_including_archived(fixture_db):
 
 def test_stats_sums_distance_ignoring_nulls(fixture_db):
     s = flight_stats()
-    assert s["distance_km"] == 8616.0 + 8616.0 + 1840.0  # UA200 distance NULL ignored
+    assert s["distance_km"] == 8616.0 + 8616.0 + 1840.0  # UA194 + BA930 + AC1725 distances; UA200 distance is NULL (ignored)
 
 
 def test_stats_top_routes_present(fixture_db):

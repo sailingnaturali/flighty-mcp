@@ -20,7 +20,7 @@ def list_my_flights(
         year: Filter to a calendar year (e.g. 2025).
         after: Only flights departing on/after this ISO date (YYYY-MM-DD).
         before: Only flights departing before this ISO date (YYYY-MM-DD).
-        upcoming_only: If true, return only flights that haven't departed yet (exclude past/archived). Default false = full history.
+        upcoming_only: If true, return only upcoming (non-archived) flights. Default false returns your full flight history.
         limit: Maximum number of legs to return (default 200, newest first).
     """
     return flights.list_my_flights(year=year, after=after, before=before, upcoming_only=upcoming_only, limit=limit)
@@ -42,7 +42,7 @@ def flight_stats(year: int | None = None, upcoming_only: bool = False) -> dict:
 
     Args:
         year: Filter stats to a calendar year. Omit for all-time.
-        upcoming_only: If true, return only flights that haven't departed yet (exclude past/archived). Default false = full history.
+        upcoming_only: If true, return only upcoming (non-archived) flights. Default false returns your full flight history.
     """
     return stats.flight_stats(year=year, upcoming_only=upcoming_only)
 
