@@ -1,4 +1,3 @@
-import os
 import sqlite3
 
 from flighty_mcp.flights import list_my_flights
