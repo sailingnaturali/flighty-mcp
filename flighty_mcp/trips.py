@@ -71,6 +71,8 @@ def _walk_back(legs: list[Leg], target: Leg, origin_ids: set[str] | None) -> lis
 def _walk_return(legs: list[Leg], target: Leg, home_ids: set[str]) -> list[Leg]:
     dest_id = target.arr_id
     pivot_ts = target.arr_ts if target.arr_ts is not None else target.dep_ts
+    # The first return leg is intentionally NOT gap-bounded: the destination dwell (a
+    # multi-day stay) is the point of a round trip. Only intra-run legs use SAME_TRIP_GAP.
     starts = [leg for leg in legs if leg.dep_id == dest_id and leg.dep_ts > pivot_ts]
     if not starts:
         return []
