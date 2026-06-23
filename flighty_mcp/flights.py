@@ -22,8 +22,7 @@ SELECT
     arr.longitude          AS arr_lon,
     arr.timeZoneIdentifier AS arr_tz,
     f.departureScheduleGateOriginal AS dep_ts,
-    f.arrivalScheduleGateOriginal   AS arr_ts,
-    f.distance             AS distance_km
+    f.arrivalScheduleGateOriginal   AS arr_ts
 FROM UserFlight uf
 JOIN Flight f   ON f.id = uf.flightId
 JOIN Airport dep ON dep.id = f.departureAirportId
