@@ -3,8 +3,9 @@ import time
 from collections import Counter
 
 from flighty_mcp.animator import encode_route, stops_from_legs
+from flighty_mcp.db import connect, resolve_owner_id
 from flighty_mcp.filters import iso_date_to_ts
-from flighty_mcp.flights import Leg, local_date
+from flighty_mcp.flights import Leg, local_date, owner_legs_asc
 
 SAME_TRIP_GAP = 24 * 3600  # seconds; max layover for two legs to count as the same trip
 
@@ -168,3 +169,14 @@ def plan_trip(legs: list[Leg], destination: str, origin: str | None = None,
         "end_date": local_date(target.arr_ts or target.dep_ts, target.arr_tz or target.dep_tz),
         "leg_count": len(outbound),
     }
+
+
+def find_trip(destination: str, origin: str | None = None,
+              after: str | None = None, before: str | None = None) -> dict:
+    """Fetch the owner's legs and plan the trip to `destination`."""
+    con = connect()
+    try:
+        legs = owner_legs_asc(con, resolve_owner_id(con))
+    finally:
+        con.close()
+    return plan_trip(legs, destination, origin=origin, after=after, before=before)

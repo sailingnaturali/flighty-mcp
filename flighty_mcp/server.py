@@ -1,7 +1,7 @@
 """FastMCP server exposing read-only Flighty flight data."""
 from mcp.server.fastmcp import FastMCP
 
-from flighty_mcp import flights, stats
+from flighty_mcp import flights, stats, trips
 
 mcp = FastMCP("flighty")
 
@@ -45,6 +45,25 @@ def flight_stats(year: int | None = None, upcoming_only: bool = False) -> dict:
         upcoming_only: If true, return only upcoming (non-archived) flights. Default false returns your full flight history.
     """
     return stats.flight_stats(year=year, upcoming_only=upcoming_only)
+
+
+@mcp.tool()
+def animate_trip(destination: str, origin: str | None = None,
+                 after: str | None = None, before: str | None = None) -> dict:
+    """Build a flight-animator route link for your trip to a place.
+
+    Resolves the connected flights from your home (or `origin`) to `destination` and returns
+    share links: `url` (one-way) and `round_trip_url` (there and back). May instead return a
+    status of `ambiguous_destination`, `confirm_home`, or `no_match` for the assistant to
+    resolve before re-calling.
+
+    Args:
+        destination: Where the trip goes — IATA code, city, or country (e.g. "Japan", "NRT").
+        origin: Optional start — IATA code, city, or country. Defaults to your inferred home.
+        after: Optional ISO date (YYYY-MM-DD); only trips departing on/after it.
+        before: Optional ISO date (YYYY-MM-DD); only trips departing before it.
+    """
+    return trips.find_trip(destination, origin=origin, after=after, before=before)
 
 
 def main() -> None:
