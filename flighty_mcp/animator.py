@@ -37,8 +37,12 @@ def stops_from_legs(legs: list[Leg]) -> list[dict]:
 
 
 def encode_route(stops: list[dict], base_url: str | None = None) -> str:
-    """base64url(no-pad) the compact stops JSON into a ${BASE}/?d=<enc> URL."""
+    """base64url(no-pad) the compact route JSON into a ${BASE}/?d=<enc> URL.
+
+    Payload is the versioned envelope shared with flight-animator's decodeRich:
+    {"v": 1, "stops": [...]}.
+    """
     base = (base_url or os.environ.get("FLIGHT_ANIMATOR_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
-    payload = json.dumps(stops, separators=(",", ":"))
+    payload = json.dumps({"v": 1, "stops": stops}, separators=(",", ":"))
     enc = base64.urlsafe_b64encode(payload.encode("utf-8")).rstrip(b"=").decode("ascii")
     return f"{base}/?d={enc}"

@@ -42,7 +42,8 @@ def test_encode_urlsafe_no_padding_roundtrips():
     enc = url.split("?d=", 1)[1]
     assert "=" not in enc and "+" not in enc and "/" not in enc
     decoded = json.loads(base64.urlsafe_b64decode(enc + "=" * (-len(enc) % 4)))
-    assert decoded == stops
+    # Versioned envelope shared with flight-animator's decodeRich.
+    assert decoded == {"v": 1, "stops": stops}
 
 
 def test_encode_compact_json_golden():
@@ -53,8 +54,30 @@ def test_encode_compact_json_golden():
     enc = encode_route(stops, base_url="https://x").split("?d=", 1)[1]
     raw = base64.urlsafe_b64decode(enc + "=" * (-len(enc) % 4)).decode()
     assert raw == (
-        '[{"code":"YVR","lat":49.19,"lon":-123.18,"label":"Vancouver",'
+        '{"v":1,"stops":['
+        '{"code":"YVR","lat":49.19,"lon":-123.18,"label":"Vancouver",'
         '"depart":"2026-04-02T13:10:00-07:00"},'
         '{"code":"NRT","lat":35.76,"lon":140.39,"label":"Tokyo",'
-        '"arrive":"2026-04-03T16:40:00+09:00"}]'
+        '"arrive":"2026-04-03T16:40:00+09:00"}]}'
     )
+
+
+def test_matches_flight_animator_golden_vector():
+    # Cross-repo contract anchor: our encoder must byte-reproduce flight-animator's
+    # canonical ?d= vector (src/route/__fixtures__/golden-d.json). If this breaks,
+    # the two repos have diverged on the wire format.
+    golden_stops = [
+        {"code": "SFO", "label": "San Francisco", "depart": "2025-04-15T14:30:00Z"},
+        {"code": "LHR", "label": "London", "arrive": "2025-04-15T22:15:00Z",
+         "depart": "2025-04-18T09:00:00Z"},
+        {"code": "CDG", "label": "Paris", "arrive": "2025-04-18T10:20:00Z"},
+    ]
+    golden_encoded = (
+        "eyJ2IjoxLCJzdG9wcyI6W3siY29kZSI6IlNGTyIsImxhYmVsIjoiU2FuIEZyYW5jaXNjbyIsImRlcGFy"
+        "dCI6IjIwMjUtMDQtMTVUMTQ6MzA6MDBaIn0seyJjb2RlIjoiTEhSIiwibGFiZWwiOiJMb25kb24iLCJh"
+        "cnJpdmUiOiIyMDI1LTA0LTE1VDIyOjE1OjAwWiIsImRlcGFydCI6IjIwMjUtMDQtMThUMDk6MDA6MDBa"
+        "In0seyJjb2RlIjoiQ0RHIiwibGFiZWwiOiJQYXJpcyIsImFycml2ZSI6IjIwMjUtMDQtMThUMTA6MjA6"
+        "MDBaIn1dfQ"
+    )
+    enc = encode_route(golden_stops, base_url="https://x").split("?d=", 1)[1]
+    assert enc == golden_encoded

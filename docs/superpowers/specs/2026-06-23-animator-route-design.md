@@ -130,16 +130,17 @@ Timestamps are the legs' existing airport-local ISO 8601 strings (with offset), 
 
 ## Payload contract (shared with flight-animator)
 
-The `?d=` value is `base64url(JSON.stringify(stops))`, with no padding, where `stops` is:
+The `?d=` value is `base64url(JSON.stringify({v: 1, stops}))`, compact (no spaces) and with no
+padding — a **versioned envelope** matching flight-animator's `decodeRich`, where `stops` is:
 ```jsonc
-Array<{
+{ "v": 1, "stops": Array<{
   code?: string,   // IATA, uppercase
   lat: number,
   lon: number,
   label: string,   // city
   arrive?: string, // ISO 8601 with offset; omitted on the first stop
   depart?: string  // ISO 8601 with offset; omitted on the last stop
-}>
+}> }
 ```
 URL = `${BASE}/?d=<enc>`. `BASE` defaults to `https://flights.sailingnaturali.com`, overridable
 via env `FLIGHT_ANIMATOR_BASE_URL`.
