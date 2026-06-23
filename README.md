@@ -96,6 +96,8 @@ Resolves the connected flights from your home (or `origin`) to `destination` and
 
 **Returns:** If successful, a dict with keys `status` (always "ok"), `url`, `round_trip_url` (if a return is found), `home`, `destination`, `stops` (summary), `start_date`, `end_date`, `leg_count`, and `home_confidence`. On ambiguity or mismatch, returns `status` with one of: `no_match` (no flights match criteria), `ambiguous_destination` (multiple cities match the destination), or `confirm_home` (inferred home confidence is low—returns top alternatives for confirmation).
 
+**Route link format:** the `?d=` value is `base64url` of `{"v":1,"stops":[…]}` (the versioned envelope shared with flight-animator's decoder). Each stop carries `code`, `lat`, `lon`, `label`, and optional `arrive`/`depart` (ISO 8601). We always embed `lat`/`lon` so the animator needs no airport-table lookup and so points outside its bundled dataset still render — consumers should prefer the embedded coordinates over resolving the `code`.
+
 ## Installation
 
 ```bash
