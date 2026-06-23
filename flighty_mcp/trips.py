@@ -21,21 +21,21 @@ def resolve_airports(legs: list[Leg], query: str, side: str) -> set[str]:
         return getattr(leg, f"{side}_{suffix}")
 
     if len(q) == 3 and q.isalpha():
-        ids = {get(l, "id") for l in legs if (get(l, "code") or "").upper() == qup}
+        ids = {get(leg, "id") for leg in legs if (get(leg, "code") or "").upper() == qup}
         if ids:
             return ids
-    ids = {get(l, "id") for l in legs if (get(l, "city") or "").upper() == qup}
+    ids = {get(leg, "id") for leg in legs if (get(leg, "city") or "").upper() == qup}
     if ids:
         return ids
-    ids = {get(l, "id") for l in legs if qup in (get(l, "city") or "").upper()}
+    ids = {get(leg, "id") for leg in legs if qup in (get(leg, "city") or "").upper()}
     if ids:
         return ids
     return {
-        get(l, "id")
-        for l in legs
-        if (get(l, "country") or "").upper() == qup
-        or (get(l, "country_name") or "").upper() == qup
-        or qup in (get(l, "country_name") or "").upper()
+        get(leg, "id")
+        for leg in legs
+        if (get(leg, "country") or "").upper() == qup
+        or (get(leg, "country_name") or "").upper() == qup
+        or qup in (get(leg, "country_name") or "").upper()
     }
 
 
@@ -43,9 +43,9 @@ def infer_home(legs: list[Leg]) -> tuple[str | None, str | None, float]:
     """Home = most common departure airport; confidence = its share of departures."""
     if not legs:
         return None, None, 0.0
-    counts = Counter(l.dep_id for l in legs)
+    counts = Counter(leg.dep_id for leg in legs)
     home_id, c = counts.most_common(1)[0]
-    code = next((l.dep_code for l in legs if l.dep_id == home_id), None)
+    code = next((leg.dep_code for leg in legs if leg.dep_id == home_id), None)
     return home_id, code, c / sum(counts.values())
 
 
@@ -56,13 +56,13 @@ def _walk_back(legs: list[Leg], target: Leg, origin_ids: set[str] | None) -> lis
         if origin_ids is not None and cur.dep_id in origin_ids:
             break
         prevs = [
-            l for l in legs
-            if l.arr_id == cur.dep_id and l.arr_ts is not None
-            and l.dep_ts < cur.dep_ts and 0 <= (cur.dep_ts - l.arr_ts) <= SAME_TRIP_GAP
+            leg for leg in legs
+            if leg.arr_id == cur.dep_id and leg.arr_ts is not None
+            and leg.dep_ts < cur.dep_ts and 0 <= (cur.dep_ts - leg.arr_ts) <= SAME_TRIP_GAP
         ]
         if not prevs:
             break
-        prev = max(prevs, key=lambda l: l.arr_ts)
+        prev = max(prevs, key=lambda leg: leg.arr_ts)
         trip.insert(0, prev)
         cur = prev
     return trip
@@ -71,20 +71,20 @@ def _walk_back(legs: list[Leg], target: Leg, origin_ids: set[str] | None) -> lis
 def _walk_return(legs: list[Leg], target: Leg, home_ids: set[str]) -> list[Leg]:
     dest_id = target.arr_id
     pivot_ts = target.arr_ts if target.arr_ts is not None else target.dep_ts
-    starts = [l for l in legs if l.dep_id == dest_id and l.dep_ts > pivot_ts]
+    starts = [leg for leg in legs if leg.dep_id == dest_id and leg.dep_ts > pivot_ts]
     if not starts:
         return []
-    cur = min(starts, key=lambda l: l.dep_ts)
+    cur = min(starts, key=lambda leg: leg.dep_ts)
     run = [cur]
     while cur.arr_id not in home_ids:
         nexts = [
-            l for l in legs
-            if l.dep_id == cur.arr_id and cur.arr_ts is not None
-            and l.dep_ts > cur.dep_ts and 0 <= (l.dep_ts - cur.arr_ts) <= SAME_TRIP_GAP
+            leg for leg in legs
+            if leg.dep_id == cur.arr_id and cur.arr_ts is not None
+            and leg.dep_ts > cur.dep_ts and 0 <= (leg.dep_ts - cur.arr_ts) <= SAME_TRIP_GAP
         ]
         if not nexts:
             return []
-        cur = min(nexts, key=lambda l: l.dep_ts)
+        cur = min(nexts, key=lambda leg: leg.dep_ts)
         run.append(cur)
     return run
 
@@ -113,33 +113,33 @@ def plan_trip(legs: list[Leg], destination: str, origin: str | None = None,
     after_ts = iso_date_to_ts(after, "after") if after else None
     before_ts = iso_date_to_ts(before, "before") if before else None
     cands = [
-        l for l in legs
-        if l.arr_id in dest_ids
-        and (after_ts is None or l.dep_ts >= after_ts)
-        and (before_ts is None or l.dep_ts < before_ts)
+        leg for leg in legs
+        if leg.arr_id in dest_ids
+        and (after_ts is None or leg.dep_ts >= after_ts)
+        and (before_ts is None or leg.dep_ts < before_ts)
     ]
     if not cands:
         return {"status": "no_match", "field": "destination", "query": destination}
 
-    distinct = sorted({l.arr_id for l in cands})
+    distinct = sorted({leg.arr_id for leg in cands})
     if len(distinct) > 1:
         candidates = []
         for aid in distinct:
-            recent = max((l for l in cands if l.arr_id == aid), key=lambda l: l.dep_ts)
+            recent = max((leg for leg in cands if leg.arr_id == aid), key=lambda leg: leg.dep_ts)
             candidates.append({
                 "code": recent.arr_code, "city": recent.arr_city, "country": recent.arr_country,
                 "most_recent": local_date(recent.arr_ts or recent.dep_ts, recent.arr_tz or recent.dep_tz),
             })
         return {"status": "ambiguous_destination", "candidates": candidates}
 
-    upcoming = [l for l in cands if l.dep_ts > now_ts]
-    target = min(upcoming, key=lambda l: l.dep_ts) if upcoming else max(cands, key=lambda l: l.dep_ts)
+    upcoming = [leg for leg in cands if leg.dep_ts > now_ts]
+    target = min(upcoming, key=lambda leg: leg.dep_ts) if upcoming else max(cands, key=lambda leg: leg.dep_ts)
 
     home_id, home_code, home_conf = infer_home(legs)
     if origin_ids is None and home_conf < 0.4:
-        counts = Counter(l.dep_id for l in legs)
+        counts = Counter(leg.dep_id for leg in legs)
         alt_codes = [
-            next((l.dep_code for l in legs if l.dep_id == aid), None)
+            next((leg.dep_code for leg in legs if leg.dep_id == aid), None)
             for aid, _ in counts.most_common(4)
         ]
         return {
