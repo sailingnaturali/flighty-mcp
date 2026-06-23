@@ -72,15 +72,15 @@ def list_my_flights(
     year: int | None = None,
     after: str | None = None,
     before: str | None = None,
+    upcoming_only: bool = False,
     limit: int = 200,
-    include_archived: bool = False,
 ) -> list[dict]:
     con = connect()
     try:
         owner = resolve_owner_id(con)
         query = _LEG_SELECT
         params: list = [owner]
-        if not include_archived:
+        if upcoming_only:
             query += " AND uf.isArchived = 0"
         if year is not None:
             start = int(datetime(year, 1, 1, tzinfo=timezone.utc).timestamp())

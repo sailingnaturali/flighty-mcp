@@ -10,16 +10,18 @@ JOIN Airport dep ON dep.id = f.departureAirportId
 JOIN Airport arr ON arr.id = f.scheduledArrivalAirportId
 JOIN Airline al  ON al.id = f.airlineId
 WHERE uf.deleted IS NULL AND f.deleted IS NULL
-  AND uf.userId = ? AND uf.isMyFlight = 1 AND uf.isArchived = 0
+  AND uf.userId = ? AND uf.isMyFlight = 1
 """
 
 
-def flight_stats(year: int | None = None) -> dict:
+def flight_stats(year: int | None = None, upcoming_only: bool = False) -> dict:
     con = connect()
     try:
         owner = resolve_owner_id(con)
         where = _BASE
         params: list = [owner]
+        if upcoming_only:
+            where += " AND uf.isArchived = 0"
         if year is not None:
             start = int(datetime(year, 1, 1, tzinfo=timezone.utc).timestamp())
             end = int(datetime(year + 1, 1, 1, tzinfo=timezone.utc).timestamp())

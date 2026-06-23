@@ -5,11 +5,16 @@ def _by_no(legs):
     return {leg["flight_no"]: leg for leg in legs}
 
 
-def test_lists_only_owner_active_flights(fixture_db):
-    legs = list_my_flights()
-    nos = {leg["flight_no"] for leg in legs}
-    # f1,f2,f6 are owner, not archived, not deleted; f3 archived, f4 friend,
-    # f5 family, f7 deleted-flight all excluded.
+def test_lists_owner_flights_including_archived_by_default(fixture_db):
+    nos = {leg["flight_no"] for leg in list_my_flights()}
+    # Full history by default: owner, isMyFlight=1, not deleted — archived INCLUDED.
+    # f3 (AC1725) archived now included; f4 friend, f5 family, f7 deleted-flight excluded.
+    assert nos == {"UA194", "BA930", "UA200", "AC1725"}
+
+
+def test_upcoming_only_excludes_archived(fixture_db):
+    nos = {leg["flight_no"] for leg in list_my_flights(upcoming_only=True)}
+    # only isArchived=0 owner flights: f1, f2, f6 (f3 archived, f7 deleted excluded)
     assert nos == {"UA194", "BA930", "UA200"}
 
 
