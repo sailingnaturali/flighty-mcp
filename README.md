@@ -80,6 +80,22 @@ Aggregate stats over your flights: counts, distance, unique airports/airlines, a
 }
 ```
 
+### `animate_trip`
+
+Build a flight-animator route link for your trip to a place.
+
+Resolves the connected flights from your home (or `origin`) to `destination` and returns shareable links: `url` (one-way trip) and `round_trip_url` (there and back). May instead return a resolution prompt with status `ambiguous_destination`, `confirm_home`, or `no_match`.
+
+**Arguments:**
+- `destination`: Where the trip goes — IATA code, city, or country (e.g. "Japan", "NRT").
+- `origin` (optional): Starting location — IATA code, city, or country. Defaults to your inferred home (most common departure airport).
+- `after` (optional): ISO date (YYYY-MM-DD); only trips departing on/after it.
+- `before` (optional): ISO date (YYYY-MM-DD); only trips departing before it.
+
+**Example:** "animate my flight to Japan"
+
+**Returns:** If successful, a dict with keys `status` (always "ok"), `url`, `round_trip_url` (if a return is found), `home`, `destination`, `stops` (summary), `start_date`, `end_date`, `leg_count`, and `home_confidence`. On ambiguity or mismatch, returns `status` with one of: `no_match` (no flights match criteria), `ambiguous_destination` (multiple cities match the destination), or `confirm_home` (inferred home confidence is low—returns top alternatives for confirmation).
+
 ## Installation
 
 ```bash
@@ -92,6 +108,7 @@ claude mcp add flighty -- uv --directory /path/to/flighty-mcp run flighty-mcp
 |----------|---------|-------------|
 | `FLIGHTY_DB_PATH` | `$HOME/Library/Containers/com.flightyapp.flighty/Data/Documents/MainFlightyDatabase.db` | Path to the Flighty app's SQLite database. |
 | `FLIGHTY_USER_ID` | Auto-detected from `UserProfile` table | The Flighty user ID to query (normally auto-detected; set only if overriding). |
+| `FLIGHT_ANIMATOR_BASE_URL` | `https://flights.sailingnaturali.com` | Base URL for `animate_trip` route links (consumed by the companion flight-animator app). |
 
 ## Full Disk Access Requirement
 
