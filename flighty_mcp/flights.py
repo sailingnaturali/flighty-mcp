@@ -99,3 +99,18 @@ def list_my_flights(
         return [_row_to_leg(r) for r in con.execute(query, params).fetchall()]
     finally:
         con.close()
+
+
+def get_flight(flight_no: str) -> dict | None:
+    con = connect()
+    try:
+        owner = resolve_owner_id(con)
+        query = (
+            _LEG_SELECT
+            + " AND UPPER(REPLACE(f.number,' ','')) = UPPER(REPLACE(?,' ',''))"
+            + " ORDER BY f.departureScheduleGateOriginal DESC LIMIT 1"
+        )
+        row = con.execute(query, [owner, flight_no]).fetchone()
+        return _row_to_leg(row) if row else None
+    finally:
+        con.close()

@@ -1,4 +1,4 @@
-from flighty_mcp.flights import list_my_flights, to_local_iso
+from flighty_mcp.flights import get_flight, list_my_flights, to_local_iso
 
 
 def _by_no(legs):
@@ -48,3 +48,17 @@ def test_after_before_filter(fixture_db):
 
 def test_to_local_iso_falls_back_to_utc_z():
     assert to_local_iso(1750023000, None).endswith("Z")
+
+
+def test_get_flight_matches_case_and_space_insensitive(fixture_db):
+    leg = get_flight("ua 194")
+    assert leg is not None and leg["flight_no"] == "UA194"
+
+
+def test_get_flight_unknown_returns_none(fixture_db):
+    assert get_flight("ZZ000") is None
+
+
+def test_get_flight_excludes_friend_flights(fixture_db):
+    # UA100 belongs to the friend, not the owner
+    assert get_flight("UA100") is None
