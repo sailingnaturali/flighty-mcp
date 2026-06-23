@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flighty_mcp.db import connect, resolve_owner_id
+from flighty_mcp.filters import iso_date_to_ts, year_bounds
 
 _LEG_SELECT = """
 SELECT
@@ -83,16 +84,15 @@ def list_my_flights(
         if upcoming_only:
             query += " AND uf.isArchived = 0"
         if year is not None:
-            start = int(datetime(year, 1, 1, tzinfo=timezone.utc).timestamp())
-            end = int(datetime(year + 1, 1, 1, tzinfo=timezone.utc).timestamp())
+            start, end = year_bounds(year)
             query += " AND f.departureScheduleGateOriginal >= ? AND f.departureScheduleGateOriginal < ?"
             params += [start, end]
         if after is not None:
             query += " AND f.departureScheduleGateOriginal >= ?"
-            params.append(int(datetime.fromisoformat(after).replace(tzinfo=timezone.utc).timestamp()))
+            params.append(iso_date_to_ts(after, "after"))
         if before is not None:
             query += " AND f.departureScheduleGateOriginal < ?"
-            params.append(int(datetime.fromisoformat(before).replace(tzinfo=timezone.utc).timestamp()))
+            params.append(iso_date_to_ts(before, "before"))
         query += " ORDER BY f.departureScheduleGateOriginal DESC LIMIT ?"
         params.append(limit)
         return [_row_to_leg(r) for r in con.execute(query, params).fetchall()]

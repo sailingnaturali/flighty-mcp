@@ -1,3 +1,5 @@
+import pytest
+
 from flighty_mcp.flights import get_flight, list_my_flights, to_local_iso
 
 
@@ -67,3 +69,13 @@ def test_get_flight_unknown_returns_none(fixture_db):
 def test_get_flight_excludes_friend_flights(fixture_db):
     # UA100 belongs to the friend, not the owner
     assert get_flight("UA100") is None
+
+
+def test_bad_year_raises_clear_error(fixture_db):
+    with pytest.raises(ValueError, match="year must be"):
+        list_my_flights(year=0)
+
+
+def test_bad_after_date_raises_clear_error(fixture_db):
+    with pytest.raises(ValueError, match="ISO date"):
+        list_my_flights(after="not-a-date")

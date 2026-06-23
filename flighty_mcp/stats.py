@@ -1,7 +1,7 @@
 """Aggregate statistics over the owner's flights (stable columns only)."""
-from datetime import datetime, timezone
-
 from flighty_mcp.db import connect, resolve_owner_id
+from flighty_mcp.filters import year_bounds
+from flighty_mcp.schema import has_columns
 
 _BASE = """
 FROM UserFlight uf
@@ -23,14 +23,14 @@ def flight_stats(year: int | None = None, upcoming_only: bool = False) -> dict:
         if upcoming_only:
             where += " AND uf.isArchived = 0"
         if year is not None:
-            start = int(datetime(year, 1, 1, tzinfo=timezone.utc).timestamp())
-            end = int(datetime(year + 1, 1, 1, tzinfo=timezone.utc).timestamp())
+            start, end = year_bounds(year)
             where += " AND f.departureScheduleGateOriginal >= ? AND f.departureScheduleGateOriginal < ?"
             params += [start, end]
 
+        # dist_expr is built only from the two hard-coded strings below — never user input.
+        dist_expr = "COALESCE(SUM(f.distance), 0)" if has_columns(con, "Flight", "distance") else "0"
         agg = con.execute(
-            "SELECT COUNT(*) AS flights, COALESCE(SUM(f.distance),0) AS distance_km, "
-            "COUNT(DISTINCT dep.id) AS dep_ap, COUNT(DISTINCT arr.id) AS arr_ap, "
+            f"SELECT COUNT(*) AS flights, {dist_expr} AS distance_km, "
             "COUNT(DISTINCT al.id) AS airlines " + where,
             params,
         ).fetchone()

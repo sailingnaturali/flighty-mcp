@@ -33,3 +33,13 @@ def test_list_my_flights_works_without_distance_column(tmp_path, monkeypatch):
     monkeypatch.setenv("FLIGHTY_DB_PATH", path)
     legs = list_my_flights()
     assert legs and legs[0]["flight_no"] == "UA194"
+
+
+def test_flight_stats_works_without_distance_column(tmp_path, monkeypatch):
+    from flighty_mcp.stats import flight_stats
+    path = str(tmp_path / "nodist_stats.db")
+    _build_no_distance(path)
+    monkeypatch.setenv("FLIGHTY_DB_PATH", path)
+    s = flight_stats()
+    assert s["flights"] == 1
+    assert s["distance_km"] == 0.0
