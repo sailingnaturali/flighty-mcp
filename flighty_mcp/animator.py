@@ -73,3 +73,17 @@ def shorten_url(long_url: str, *, timeout: float = 3.0) -> str:
         return body.get("url") or long_url
     except Exception:
         return long_url
+
+
+def apply_shortening(result: dict, *, enabled: bool, shorten=shorten_url) -> dict:
+    """Replace the long share URLs in an animate_trip result with short links, in place.
+
+    No-op unless the result is a successful trip and shortening is enabled. `round_trip_url`
+    may be None (one-way trip) and is left as-is in that case.
+    """
+    if result.get("status") != "ok" or not enabled:
+        return result
+    result["url"] = shorten(result["url"])
+    if result.get("round_trip_url"):
+        result["round_trip_url"] = shorten(result["round_trip_url"])
+    return result

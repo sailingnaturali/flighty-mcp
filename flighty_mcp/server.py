@@ -1,7 +1,10 @@
 """FastMCP server exposing read-only Flighty flight data."""
+import os
+
 from mcp.server.fastmcp import FastMCP
 
 from flighty_mcp import flights, stats, trips
+from flighty_mcp.animator import apply_shortening
 
 mcp = FastMCP("flighty")
 
@@ -63,7 +66,9 @@ def animate_trip(destination: str, origin: str | None = None,
         after: Optional ISO date (YYYY-MM-DD); only trips departing on/after it.
         before: Optional ISO date (YYYY-MM-DD); only trips departing before it.
     """
-    return trips.find_trip(destination, origin=origin, after=after, before=before)
+    result = trips.find_trip(destination, origin=origin, after=after, before=before)
+    enabled = os.environ.get("FLIGHT_ANIMATOR_SHORTEN", "1") not in ("0", "false", "")
+    return apply_shortening(result, enabled=enabled)
 
 
 def main() -> None:

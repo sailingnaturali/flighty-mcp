@@ -36,3 +36,25 @@ def test_passes_through_url_without_d():
     with patch("urllib.request.urlopen") as m:
         assert shorten_url(plain) == plain
         m.assert_not_called()
+
+
+from flighty_mcp.animator import apply_shortening
+
+
+def test_apply_shortening_replaces_urls_when_enabled():
+    result = {"status": "ok", "url": "L1", "round_trip_url": "L2"}
+    out = apply_shortening(result, enabled=True, shorten=lambda u: f"short:{u}")
+    assert out["url"] == "short:L1"
+    assert out["round_trip_url"] == "short:L2"
+
+
+def test_apply_shortening_noop_when_disabled():
+    result = {"status": "ok", "url": "L1", "round_trip_url": None}
+    out = apply_shortening(result, enabled=False, shorten=lambda u: "NOPE")
+    assert out["url"] == "L1"
+
+
+def test_apply_shortening_skips_non_ok_status():
+    result = {"status": "confirm_home", "inferred_home": "YVR"}
+    out = apply_shortening(result, enabled=True, shorten=lambda u: "NOPE")
+    assert out == {"status": "confirm_home", "inferred_home": "YVR"}
