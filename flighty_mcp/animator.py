@@ -2,6 +2,7 @@
 import base64
 import json
 import os
+import urllib.request
 
 from flighty_mcp.flights import Leg, to_local_iso
 
@@ -46,3 +47,43 @@ def encode_route(stops: list[dict], base_url: str | None = None) -> str:
     payload = json.dumps({"v": 1, "stops": stops}, separators=(",", ":"))
     enc = base64.urlsafe_b64encode(payload.encode("utf-8")).rstrip(b"=").decode("ascii")
     return f"{base}/?d={enc}"
+
+
+def shorten_url(long_url: str, *, timeout: float = 3.0) -> str:
+    """Trade a `{base}/?d=<payload>` URL for a short `{base}/t/<code>` link via the shortener.
+
+    Returns the original URL unchanged on any failure, or when there's no `?d=` payload to
+    shorten, so a shortener outage never blocks the animate_trip response.
+    """
+    marker = "/?d="
+    if marker not in long_url:
+        return long_url
+    base, payload = long_url.split(marker, 1)
+    try:
+        req = urllib.request.Request(
+            f"{base}/api/shorten",
+            data=json.dumps({"d": payload}).encode("utf-8"),
+            headers={"content-type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            if resp.status != 200:
+                return long_url
+            body = json.loads(resp.read())
+        return body.get("url") or long_url
+    except Exception:
+        return long_url
+
+
+def apply_shortening(result: dict, *, enabled: bool, shorten=shorten_url) -> dict:
+    """Replace the long share URLs in an animate_trip result with short links, in place.
+
+    No-op unless the result is a successful trip and shortening is enabled. `round_trip_url`
+    may be None (one-way trip) and is left as-is in that case.
+    """
+    if result.get("status") != "ok" or not enabled:
+        return result
+    result["url"] = shorten(result["url"])
+    if result.get("round_trip_url"):
+        result["round_trip_url"] = shorten(result["round_trip_url"])
+    return result
