@@ -1,7 +1,7 @@
 import json
 from unittest.mock import patch, MagicMock
 
-from flighty_mcp.animator import shorten_url
+from flighty_mcp.animator import apply_shortening, shorten_url
 
 LONG = "https://flights.sailingnaturali.com/?d=eyJ2IjoxfQ"
 
@@ -36,9 +36,6 @@ def test_passes_through_url_without_d():
     with patch("urllib.request.urlopen") as m:
         assert shorten_url(plain) == plain
         m.assert_not_called()
-
-
-from flighty_mcp.animator import apply_shortening
 
 
 def test_apply_shortening_replaces_urls_when_enabled():
